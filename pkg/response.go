@@ -5,19 +5,24 @@ import (
 	"fmt"
 )
 
+const (
+	SgipRespPktLen = HeaderPktLen + 1 + 8 //29d, 0x1d
+)
+
 type SgipRespPkt struct {
 	Result  Status // 请求返回结果，0：执行成功 其它：错误码
 	Reserve string // 保留
 
 	// used in session
-	SequenceNum string
+	SequenceNum    [3]uint32
+	SequenceNumStr string
 }
 
-func (p *SgipRespPkt) Pack(seqNum string) ([]byte, error) {
-	var w = newPkgWriter(SgipBindRespPktLen)
+func (p *SgipRespPkt) Pack(seqNum [3]uint32, commandId CommandID) ([]byte, error) {
+	var w = newPkgWriter(SgipRespPktLen)
 	// header
-	w.WriteHeader(SgipBindRespPktLen, seqNum, SGIP_BIND_RESP)
-	p.SequenceNum = seqNum
+	w.WriteHeader(SgipRespPktLen, seqNum, commandId)
+	p.SequenceNumStr = GenSequenceNumStr(seqNum)
 
 	// body
 	w.WriteByte(p.Result.Data())
@@ -34,13 +39,16 @@ func (p *SgipRespPkt) Unpack(data []byte) error {
 	// Body: Reserve
 	p.Reserve = string(r.ReadCString(8))
 
+	p.SequenceNumStr = GenSequenceNumStr(p.SequenceNum)
+
 	return r.Error()
 }
 
 func (p *SgipRespPkt) String() string {
 	var b bytes.Buffer
-	fmt.Fprintln(&b, "--- SGIP Resp ---")
+	//fmt.Fprintln(&b, "--- SGIP Resp ---")
 	fmt.Fprintln(&b, "Result: ", p.Result)
 	fmt.Fprintln(&b, "Reserve: ", p.Reserve)
+	fmt.Fprintln(&b, "SequenceNumStr", p.SequenceNumStr)
 	return b.String()
 }

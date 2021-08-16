@@ -23,7 +23,7 @@ func handleBind(r *server.Response, p *server.Packet, l *log.Logger) (bool, erro
 	}
 
 	l.Println("remote addr:", p.Conn.Conn.RemoteAddr().(*net.TCPAddr).IP.String())
-	resp := r.Packer.(*pkg.SgipRespPkt)
+	resp := r.Packer.(*pkg.SgipBindRespPkt)
 
 	if req.LoginName != user || req.LoginPassword != password {
 		resp.Result = pkg.Status(1)
@@ -48,14 +48,14 @@ func handleSubmit(r *server.Response, p *server.Packet, l *log.Logger) (bool, er
 		return true, nil
 	}
 
-	resp := r.Packer.(*pkg.SgipRespPkt)
-	resp.SequenceNum, _ = pkg.GenSequenceNum(nodeId, <-p.Conn.SequenceID)
+	resp := r.Packer.(*pkg.SgipSubmitRespPkt)
+	resp.SequenceNum = pkg.GenSequenceNum(nodeId, <-p.Conn.SequenceID)
 	deliverPkgs := make([]*pkg.SgipDeliverReqPkt, 0)
 	for i, d := range req.UserNumber {
 		l.Printf("handleSubmit: handle submit from %s ok! msgid[%s], destTerminalId[%s]\n",
-			req.SPNumber, fmt.Sprintf("%s_%d", resp.SequenceNum, i), d)
+			req.SPNumber, fmt.Sprintf("[%d]_%d", resp.SequenceNum, i), d)
 		content := "DELIVRD"
-		seqNum, _ := pkg.GenSequenceNum(nodeId, <-p.Conn.SequenceID)
+		seqNum := pkg.GenSequenceNum(nodeId, <-p.Conn.SequenceID)
 		deliverPkgs = append(deliverPkgs, &pkg.SgipDeliverReqPkt{
 			UserNumber:     d,
 			SPNumber:       req.SPNumber,
@@ -69,11 +69,11 @@ func handleSubmit(r *server.Response, p *server.Packet, l *log.Logger) (bool, er
 		})
 	}
 	go mockDeliver(deliverPkgs, p)
-	return true, nil
+	return false, nil
 }
 
 func mockDeliver(pkgs []*pkg.SgipDeliverReqPkt, s *server.Packet) {
-	t := time.NewTicker(10 * time.Second)
+	t := time.NewTicker(5 * time.Second)
 	defer t.Stop()
 	for {
 		select {
@@ -88,6 +88,7 @@ func mockDeliver(pkgs []*pkg.SgipDeliverReqPkt, s *server.Packet) {
 					log.Printf("server sgip: send a sgip deliver request ok.")
 				}
 			}
+			return
 
 		default:
 		}

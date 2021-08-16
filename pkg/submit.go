@@ -35,15 +35,16 @@ type SgipSubmitReqPkt struct {
 	Reserve          string
 
 	// used in session
-	SequenceNum string
+	SequenceNum    [3]uint32
+	SequenceNumStr string
 }
 
-func (p *SgipSubmitReqPkt) Pack(seqNum string) ([]byte, error) {
-	var pktLen = HeaderPktLen + 123 + uint32(p.UserCount)*21
+func (p *SgipSubmitReqPkt) Pack(seqNum [3]uint32) ([]byte, error) {
+	var pktLen = HeaderPktLen + 123 + uint32(p.UserCount)*21 + p.MessageLength
 	var w = newPkgWriter(pktLen)
 	// header
 	w.WriteHeader(pktLen, seqNum, SGIP_SUBMIT)
-	p.SequenceNum = seqNum
+	p.SequenceNumStr = GenSequenceNumStr(seqNum)
 
 	// body
 	w.WriteFixedSizeString(p.SPNumber, 21)
@@ -100,9 +101,12 @@ func (p *SgipSubmitReqPkt) Unpack(data []byte) error {
 	p.MessageCoding = r.ReadByte()
 	p.MessageType = r.ReadByte()
 	r.ReadInt(binary.BigEndian, &p.MessageLength)
-	p.MessageContent = string(r.ReadCString(int(p.MessageLength)))
+	msgContent := make([]byte, p.MessageLength)
+	r.ReadBytes(msgContent)
+	p.MessageContent = string(msgContent)
 	p.Reserve = string(r.ReadCString(8))
 
+	p.SequenceNumStr = GenSequenceNumStr(p.SequenceNum)
 	return r.Error()
 }
 
@@ -131,6 +135,27 @@ func (p *SgipSubmitReqPkt) String() string {
 	fmt.Fprintln(&b, "MessageLength: ", p.MessageLength)
 	fmt.Fprintln(&b, "MessageContent: ", p.MessageContent)
 	fmt.Fprintln(&b, "Reserve: ", p.Reserve)
+	fmt.Fprintln(&b, "SequenceNumStr", p.SequenceNumStr)
+
+	return b.String()
+}
+
+type SgipSubmitRespPkt struct {
+	SgipRespPkt
+}
+
+func (p *SgipSubmitRespPkt) Pack(seqNum [3]uint32) ([]byte, error) {
+	return p.SgipRespPkt.Pack(seqNum, SGIP_SUBMIT_RESP)
+}
+
+func (p *SgipSubmitRespPkt) Unpack(data []byte) error {
+	return p.SgipRespPkt.Unpack(data)
+}
+
+func (p *SgipSubmitRespPkt) String() string {
+	var b bytes.Buffer
+	fmt.Fprintln(&b, "--- SGIP Submit Resp ---")
+	fmt.Fprintln(&b, p.SgipRespPkt.String())
 
 	return b.String()
 }

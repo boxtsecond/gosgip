@@ -37,15 +37,21 @@ func startAClient(idx int) {
 	}
 	log.Printf("client %d: connect and auth ok", idx)
 
-	t := time.NewTicker(time.Second)
+	t := time.NewTicker(time.Second * 3)
 	defer t.Stop()
 
+	maxSubmit := 5
+	count := 0
 	for {
 		select {
 		case <-t.C:
-			cont, err := pkg.Utf8ToUcs2(*msg)
+			if count >= maxSubmit {
+				break
+			}
+
+			cont, err := pkg.Utf8ToGB18030(*msg)
 			if err != nil {
-				log.Printf("client %d: utf8 to ucs2 transform err: %s.", idx, err)
+				log.Printf("client %d: utf8 to gb18030 transform err: %s.", idx, err)
 				return
 			}
 			destStrArr := strings.Split(*phone, ",")
@@ -67,7 +73,7 @@ func startAClient(idx int) {
 				ReportFlag:       0,
 				TP_pid:           0,
 				TP_udhi:          0,
-				MessageCoding:    pkg.UCS2,
+				MessageCoding:    pkg.GB18030,
 				MessageType:      0,
 				MessageLength:    uint32(len(cont)),
 				MessageContent:   cont,
@@ -81,6 +87,7 @@ func startAClient(idx int) {
 			} else {
 				log.Printf("client %d: send a sgip submit request ok", idx)
 			}
+			count += 1
 			//default:
 		}
 
@@ -92,14 +99,15 @@ func startAClient(idx int) {
 		}
 
 		switch p := i.(type) {
-		case *pkg.SgipRespPkt:
-			log.Printf("client %d: receive a sgip response: %v.", idx, p)
+		case *pkg.SgipSubmitRespPkt:
+			log.Printf("client %d: receive a sgip submit response: %v", idx, p)
+
+		case *pkg.SgipBindRespPkt:
+			log.Printf("client %d: receive a sgip bind response: %v", idx, p)
 
 		case *pkg.SgipDeliverReqPkt:
 			log.Printf("client %d: receive a sgip deliver request: %v.", idx, p)
-			rsp := &pkg.SgipRespPkt{
-				Result: pkg.Status(0),
-			}
+			rsp := &pkg.SgipDeliverRespPkt{SgipRespPkt: pkg.SgipRespPkt{Result: pkg.Status(0)}}
 			err := c.SendRspPkt(rsp, p.SequenceNum)
 			if err != nil {
 				log.Printf("client %d: send sgip deliver response error: %s.", idx, err)
@@ -116,6 +124,7 @@ func startAClient(idx int) {
 				log.Printf("client %d: send sgip exit response error: %s.", idx, err)
 				break
 			}
+
 		case *pkg.SgipUnbindRespPkt:
 			log.Printf("client %d: receive a sgip exit response.", idx)
 		}

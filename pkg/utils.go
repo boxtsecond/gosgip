@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"bytes"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -65,20 +66,21 @@ func GenNodeId(areaCode, corpId string) (uint32, error) {
 //时间：4字节，格式为MMDDHHMMSS（月日时分秒）
 //序列号：4字节
 //返回16进制字符串，长度为：12*2
-func GenSequenceNum(nodeId, sequenceId uint32) (string, error) {
+func GenSequenceNum(nodeId, sequenceId uint32) [3]uint32 {
 	timeStr := GenNowTimeNoYearStr()
 	timeInt, _ := strconv.ParseInt(timeStr, 10, 32)
-	binaryStr := fmt.Sprintf("%032b%032b%032b", nodeId, timeInt, sequenceId)
-	head, _ := strconv.ParseUint(binaryStr[:64], 2, 64)
-	end, _ := strconv.ParseUint(binaryStr[64:], 2, 32)
-	return fmt.Sprintf("%016x%08x", head, end), nil
+	return [3]uint32{nodeId, uint32(timeInt), sequenceId}
 }
 
-func UnpackSequenceNum(sequenceNum string) string {
-	spId, _ := strconv.ParseUint(sequenceNum[:32], 16, 32)
-	timeStr, _ := strconv.ParseUint(sequenceNum[32:64], 16, 32)
-	seqId, _ := strconv.ParseUint(sequenceNum[64:], 16, 32)
-	return fmt.Sprintf("spId: %s, time: %s, seqId: %d, ", NewOctetString(strconv.Itoa(int(spId))).FixedString(10), NewOctetString(strconv.Itoa(int(timeStr))).FixedString(10), seqId)
+func GenSequenceNumStr(seqId [3]uint32) string {
+	return fmt.Sprintf("%d%d%d", seqId[0], seqId[1], seqId[2])
+}
+
+func UnpackSequenceNum(sequenceNum [12]byte) [3]uint32 {
+	spId := binary.BigEndian.Uint32(sequenceNum[:4])
+	t := binary.BigEndian.Uint32(sequenceNum[4:8])
+	seqId := binary.BigEndian.Uint32(sequenceNum[8:])
+	return [3]uint32{spId, t, seqId}
 }
 
 func Utf8ToUcs2(in string) (string, error) {

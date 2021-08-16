@@ -21,14 +21,16 @@ type SgipDeliverReqPkt struct {
 	Reserve        string
 
 	// used in session
-	SequenceNum string
+	SequenceNum    [3]uint32
+	SequenceNumStr string
 }
 
-func (p *SgipDeliverReqPkt) Pack(seqNum string) ([]byte, error) {
-	var w = newPkgWriter(SgipDeliverReqPktLen)
+func (p *SgipDeliverReqPkt) Pack(seqNum [3]uint32) ([]byte, error) {
+	pktLen := SgipDeliverReqPktLen + p.MessageLength
+	var w = newPkgWriter(pktLen)
 	// header
-	w.WriteHeader(SgipDeliverReqPktLen, seqNum, SGIP_DELIVER)
-	p.SequenceNum = seqNum
+	w.WriteHeader(pktLen, seqNum, SGIP_DELIVER)
+	p.SequenceNumStr = GenSequenceNumStr(seqNum)
 
 	// body
 	w.WriteFixedSizeString(p.UserNumber, 21)
@@ -51,9 +53,12 @@ func (p *SgipDeliverReqPkt) Unpack(data []byte) error {
 	p.TP_udhi = r.ReadByte()
 	p.MessageCoding = r.ReadByte()
 	r.ReadInt(binary.BigEndian, &p.MessageLength)
-	p.MessageContent = string(r.ReadCString(int(p.MessageLength)))
+	msgContent := make([]byte, p.MessageLength)
+	r.ReadBytes(msgContent)
+	p.MessageContent = string(msgContent)
 	p.Reserve = string(r.ReadCString(8))
 
+	p.SequenceNumStr = GenSequenceNumStr(p.SequenceNum)
 	return r.Error()
 }
 
@@ -68,6 +73,27 @@ func (p *SgipDeliverReqPkt) String() string {
 	fmt.Fprintln(&b, "MessageLength: ", p.MessageLength)
 	fmt.Fprintln(&b, "MessageContent: ", p.MessageContent)
 	fmt.Fprintln(&b, "Reserve: ", p.Reserve)
+	fmt.Fprintln(&b, "SequenceNumStr", p.SequenceNumStr)
+
+	return b.String()
+}
+
+type SgipDeliverRespPkt struct {
+	SgipRespPkt
+}
+
+func (p *SgipDeliverRespPkt) Pack(seqNum [3]uint32) ([]byte, error) {
+	return p.SgipRespPkt.Pack(seqNum, SGIP_DELIVER_RESP)
+}
+
+func (p *SgipDeliverRespPkt) Unpack(data []byte) error {
+	return p.SgipRespPkt.Unpack(data)
+}
+
+func (p *SgipDeliverRespPkt) String() string {
+	var b bytes.Buffer
+	fmt.Fprintln(&b, "--- SGIP Deliver Resp ---")
+	fmt.Fprintln(&b, p.SgipRespPkt.String())
 
 	return b.String()
 }

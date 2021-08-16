@@ -14,7 +14,7 @@ const (
 )
 
 type Packer interface {
-	Pack(seqNum string) ([]byte, error)
+	Pack(seqNum [3]uint32) ([]byte, error)
 	Unpack(data []byte) error
 	String() string
 }
@@ -123,10 +123,12 @@ func (w *pkgWriter) WriteInt(order binary.ByteOrder, data interface{}) {
 	}
 }
 
-func (w *pkgWriter) WriteHeader(pktLen uint32, seqNum string, commandId CommandID) {
+func (w *pkgWriter) WriteHeader(pktLen uint32, seqNum [3]uint32, commandId CommandID) {
 	w.WriteInt(binary.BigEndian, pktLen)
 	w.WriteInt(binary.BigEndian, commandId)
-	w.WriteBytes(NewOctetString(seqNum).Byte(12))
+	w.WriteInt(binary.BigEndian, seqNum[0])
+	w.WriteInt(binary.BigEndian, seqNum[1])
+	w.WriteInt(binary.BigEndian, seqNum[2])
 }
 
 const maxCStringSize = 160

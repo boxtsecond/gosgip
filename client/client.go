@@ -66,7 +66,7 @@ func (cli *Client) Connect(serverAddr, user, pwd string, loginType uint8, timeou
 		return err
 	}
 
-	rsp, ok := p.(*pkg.SgipRespPkt)
+	rsp, ok := p.(*pkg.SgipBindRespPkt)
 	if !ok {
 		err = ErrRespNotMatch
 		return err
@@ -87,15 +87,11 @@ func (cli *Client) Disconnect() {
 }
 
 func (cli *Client) SendReqPkt(packet pkg.Packer) error {
-	seqNum, err := pkg.GenSequenceNum(cli.nodeId, <-cli.conn.SequenceID)
-
-	if err != nil {
-		return err
-	}
+	seqNum := pkg.GenSequenceNum(cli.nodeId, <-cli.conn.SequenceID)
 	return cli.conn.SendPkt(packet, seqNum)
 }
 
-func (cli *Client) SendRspPkt(packet pkg.Packer, seqNum string) error {
+func (cli *Client) SendRspPkt(packet pkg.Packer, seqNum [3]uint32) error {
 	return cli.conn.SendPkt(packet, seqNum)
 }
 

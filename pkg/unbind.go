@@ -12,19 +12,21 @@ const (
 
 type SgipUnbindReqPkt struct {
 	// used in session
-	SequenceNum string
+	SequenceNum    [3]uint32
+	SequenceNumStr string
 }
 type SgipUnbindRespPkt struct {
 	// used in session
-	SequenceNum string
+	SequenceNum    [3]uint32
+	SequenceNumStr string
 }
 
-func (p *SgipUnbindReqPkt) Pack(seqNum string) ([]byte, error) {
+func (p *SgipUnbindReqPkt) Pack(seqNum [3]uint32) ([]byte, error) {
 	var w = newPkgWriter(SgipUnbindReqPktLen)
 
 	// header
 	w.WriteHeader(SgipUnbindReqPktLen, seqNum, SGIP_UNBIND)
-	p.SequenceNum = seqNum
+	p.SequenceNumStr = GenSequenceNumStr(seqNum)
 
 	return w.Bytes()
 }
@@ -39,12 +41,11 @@ func (p *SgipUnbindReqPkt) String() string {
 	return b.String()
 }
 
-func (p *SgipUnbindRespPkt) Pack(seqNum string) ([]byte, error) {
+func (p *SgipUnbindRespPkt) Pack(seqNum [3]uint32) ([]byte, error) {
 	var w = newPkgWriter(SgipUnbindRespPktLen)
 
 	// header
 	w.WriteHeader(SgipUnbindRespPktLen, seqNum, SGIP_UNBIND_RESP)
-	p.SequenceNum = seqNum
 
 	return w.Bytes()
 }

@@ -2,7 +2,6 @@ package pkg
 
 import (
 	"encoding/binary"
-	"fmt"
 	"io"
 	"math/rand"
 	"net"
@@ -73,13 +72,11 @@ func (c *Conn) SetState(state State) {
 	c.State = state
 }
 
-func (c *Conn) SendPkt(packet Packer, seqNum string) error {
+func (c *Conn) SendPkt(packet Packer, seqNum [3]uint32) error {
 	if c.State == CONNECTION_CLOSED {
 		return ErrConnIsClosed
 	}
 
-	fmt.Println(packet.String())
-	fmt.Println(seqNum)
 	data, err := packet.Pack(seqNum)
 	if err != nil {
 		return err
@@ -98,9 +95,9 @@ const (
 )
 
 type CommandIDHeader struct {
-	PacketLength uint32    // 数据包长度
-	CommandID    uint32    // 请求标识
-	SequenceID   [3]uint32 // 请求标识
+	PacketLength uint32   // 数据包长度
+	CommandID    uint32   // 请求标识
+	SequenceID   [12]byte // 请求标识
 }
 
 type readBuffer struct {
@@ -147,9 +144,7 @@ func (c *Conn) RecvAndUnpackPkt(timeout time.Duration) (Packer, error) {
 		c.SetReadDeadline(time.Now().Add(timeout))
 	}
 
-	sequenceID := fmt.Sprintf("%032b%032b%032b", rb.CommandIDHeader.SequenceID[0], rb.CommandIDHeader.SequenceID[1], rb.CommandIDHeader.SequenceID[2])
-	fmt.Println("------------")
-	fmt.Println(sequenceID)
+	sequenceID := UnpackSequenceNum(rb.CommandIDHeader.SequenceID)
 
 	// packet body
 	var leftData = rb.leftData[0:(rb.CommandIDHeader.PacketLength - 20)]
@@ -170,15 +165,15 @@ func (c *Conn) RecvAndUnpackPkt(timeout time.Duration) (Packer, error) {
 	case SGIP_BIND:
 		p = &SgipBindReqPkt{SequenceNum: sequenceID}
 	case SGIP_BIND_RESP:
-		p = &SgipRespPkt{SequenceNum: sequenceID}
+		p = &SgipBindRespPkt{SgipRespPkt{SequenceNum: sequenceID}}
 	case SGIP_SUBMIT:
 		p = &SgipSubmitReqPkt{SequenceNum: sequenceID}
 	case SGIP_SUBMIT_RESP:
-		p = &SgipRespPkt{SequenceNum: sequenceID}
+		p = &SgipSubmitRespPkt{SgipRespPkt{SequenceNum: sequenceID}}
 	case SGIP_DELIVER:
 		p = &SgipDeliverReqPkt{SequenceNum: sequenceID}
 	case SGIP_DELIVER_RESP:
-		p = &SgipRespPkt{SequenceNum: sequenceID}
+		p = &SgipDeliverRespPkt{SgipRespPkt{SequenceNum: sequenceID}}
 	case SGIP_UNBIND:
 		p = &SgipUnbindReqPkt{SequenceNum: sequenceID}
 	case SGIP_UNBIND_RESP:

@@ -17,14 +17,15 @@ type SgipBindReqPkt struct {
 	Reserve       string // 保留
 
 	// used in session
-	SequenceNum string
+	SequenceNum    [3]uint32
+	SequenceNumStr string
 }
 
-func (p *SgipBindReqPkt) Pack(seqNum string) ([]byte, error) {
+func (p *SgipBindReqPkt) Pack(seqNum [3]uint32) ([]byte, error) {
 	var w = newPkgWriter(SgipBindReqPktLen)
 	// header
 	w.WriteHeader(SgipBindReqPktLen, seqNum, SGIP_BIND)
-	p.SequenceNum = seqNum
+	p.SequenceNumStr = GenSequenceNumStr(seqNum)
 
 	// body
 	w.WriteByte(p.LoginType)
@@ -47,6 +48,8 @@ func (p *SgipBindReqPkt) Unpack(data []byte) error {
 	// Body: Reserve
 	p.Reserve = string(r.ReadCString(8))
 
+	p.SequenceNumStr = GenSequenceNumStr(p.SequenceNum)
+
 	return r.Error()
 }
 
@@ -57,5 +60,26 @@ func (p *SgipBindReqPkt) String() string {
 	fmt.Fprintln(&b, "LoginName: ", p.LoginName)
 	fmt.Fprintln(&b, "LoginPassword: ", p.LoginPassword)
 	fmt.Fprintln(&b, "Reserve: ", p.Reserve)
+	fmt.Fprintln(&b, "SequenceNumStr", p.SequenceNumStr)
+	return b.String()
+}
+
+type SgipBindRespPkt struct {
+	SgipRespPkt
+}
+
+func (p *SgipBindRespPkt) Pack(seqNum [3]uint32) ([]byte, error) {
+	return p.SgipRespPkt.Pack(seqNum, SGIP_BIND_RESP)
+}
+
+func (p *SgipBindRespPkt) Unpack(data []byte) error {
+	return p.SgipRespPkt.Unpack(data)
+}
+
+func (p *SgipBindRespPkt) String() string {
+	var b bytes.Buffer
+	fmt.Fprintln(&b, "--- SGIP Bind Resp ---")
+	fmt.Fprintln(&b, p.SgipRespPkt.String())
+
 	return b.String()
 }
