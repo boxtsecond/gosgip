@@ -243,7 +243,7 @@ func startActiveTest(c *conn) {
 				return
 			case <-t.C:
 				if atomic.LoadInt32(&c.counter) >= c.n {
-					c.server.ErrorLog.Printf("no smgp active test response returned from %v for %d times!",
+					c.server.ErrorLog.Printf("no sgip active test response returned from %v for %d times!",
 						c.Conn.RemoteAddr(), c.n)
 					exceed <- struct{}{}
 					break
@@ -262,7 +262,7 @@ func (c *conn) serve() {
 
 	defer c.close()
 
-	startActiveTest(c)
+	//startActiveTest(c)
 
 	for {
 		select {
