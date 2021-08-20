@@ -65,7 +65,6 @@ func GenNodeId(areaCode, corpId string) (uint32, error) {
 //命令源节点的编号：4字节
 //时间：4字节，格式为MMDDHHMMSS（月日时分秒）
 //序列号：4字节
-//返回16进制字符串，长度为：12*2
 func GenSequenceNum(nodeId, sequenceId uint32) [3]uint32 {
 	timeStr := GenNowTimeNoYearStr()
 	timeInt, _ := strconv.ParseInt(timeStr, 10, 32)
@@ -73,7 +72,7 @@ func GenSequenceNum(nodeId, sequenceId uint32) [3]uint32 {
 }
 
 func GenSequenceNumStr(seqId [3]uint32) string {
-	return fmt.Sprintf("%d%d%d", seqId[0], seqId[1], seqId[2])
+	return fmt.Sprintf("%d%010d%d", seqId[0], seqId[1], seqId[2])
 }
 
 func UnpackSequenceNum(sequenceNum [12]byte) [3]uint32 {
