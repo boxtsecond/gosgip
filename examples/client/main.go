@@ -88,6 +88,21 @@ func startAClient(idx int) {
 				log.Printf("client %d: send a sgip submit request ok", idx)
 			}
 			count += 1
+
+			go func() {
+				tracePkg := &pkg.SgipTraceReqPkt{
+					SubmitSequenceNum: p.SequenceNum,
+					UserNumber:        p.UserNumber[0],
+					Reserve:           "",
+				}
+				err := c.SendReqPkt(tracePkg)
+				if err != nil {
+					log.Printf("client %d: send a sgip trace request error: %s.", idx, err)
+					return
+				} else {
+					log.Printf("client %d: send a sgip trace request ok", idx)
+				}
+			}()
 			//default:
 		}
 
@@ -100,13 +115,13 @@ func startAClient(idx int) {
 
 		switch p := i.(type) {
 		case *pkg.SgipSubmitRespPkt:
-			log.Printf("client %d: receive a sgip submit response: %v", idx, p)
+			log.Printf("client %d: receive a sgip submit response.", idx)
 
 		case *pkg.SgipBindRespPkt:
-			log.Printf("client %d: receive a sgip bind response: %v", idx, p)
+			log.Printf("client %d: receive a sgip bind response.", idx)
 
 		case *pkg.SgipDeliverReqPkt:
-			log.Printf("client %d: receive a sgip deliver request: %v.", idx, p)
+			log.Printf("client %d: receive a sgip deliver request ok.", idx)
 			rsp := &pkg.SgipDeliverRespPkt{SgipRespPkt: pkg.SgipRespPkt{Result: pkg.Status(0)}}
 			err := c.SendRspPkt(rsp, p.SequenceNum)
 			if err != nil {
@@ -114,6 +129,17 @@ func startAClient(idx int) {
 				break
 			} else {
 				log.Printf("client %d: send sgip deliver response ok.", idx)
+			}
+
+		case *pkg.SgipReportReqPkt:
+			log.Printf("client %d: receive a sgip report request ok.", idx)
+			rsp := &pkg.SgipReportRespPkt{SgipRespPkt: pkg.SgipRespPkt{Result: pkg.Status(0)}}
+			err := c.SendRspPkt(rsp, p.SequenceNum)
+			if err != nil {
+				log.Printf("client %d: send sgip report response error: %s.", idx, err)
+				break
+			} else {
+				log.Printf("client %d: send sgip report response ok.", idx)
 			}
 
 		case *pkg.SgipUnbindReqPkt:
@@ -127,6 +153,30 @@ func startAClient(idx int) {
 
 		case *pkg.SgipUnbindRespPkt:
 			log.Printf("client %d: receive a sgip exit response.", idx)
+
+		case *pkg.SgipUserRptReqPkt:
+			log.Printf("client %d: receive a sgip userRpt request.", idx)
+			rsp := &pkg.SgipUserRptRespPkt{}
+			err := c.SendRspPkt(rsp, p.SequenceNum)
+			if err != nil {
+				log.Printf("client %d: send sgip userRpt response error: %s.", idx, err)
+				break
+			}
+
+		case *pkg.SgipUserRptRespPkt:
+			log.Printf("client %d: receive a sgip userRpt response.", idx)
+
+		case *pkg.SgipTraceReqPkt:
+			log.Printf("client %d: receive a sgip trace request.", idx)
+			rsp := &pkg.SgipUnbindRespPkt{}
+			err := c.SendRspPkt(rsp, p.SequenceNum)
+			if err != nil {
+				log.Printf("client %d: send sgip trace response error: %s.", idx, err)
+				break
+			}
+
+		case *pkg.SgipTraceRespPkt:
+			log.Printf("client %d: receive a sgip trace response.", idx)
 		}
 	}
 }

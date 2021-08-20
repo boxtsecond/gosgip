@@ -46,7 +46,6 @@ type Server struct {
 	NodeId  uint32
 	Handler Handler
 
-	// protocol info
 	T time.Duration
 	N int32
 
@@ -117,8 +116,8 @@ func (c *conn) readPacket() (*Response, error) {
 			},
 			SequenceNum: p.SequenceNum,
 		}
-		c.server.ErrorLog.Printf("receive a sgip login request from %v[%d]\n",
-			c.Conn.RemoteAddr(), p.SequenceNum)
+		c.server.ErrorLog.Printf("receive a sgip login request from %v[%s]\n",
+			c.Conn.RemoteAddr(), p.SequenceNumStr)
 
 	case *pkg.SgipBindRespPkt:
 		rsp = &Response{
@@ -127,8 +126,8 @@ func (c *conn) readPacket() (*Response, error) {
 				Conn:   c.Conn,
 			},
 		}
-		c.server.ErrorLog.Printf("receive a sgip bind response from %v[%d]\n",
-			c.Conn.RemoteAddr(), p.SequenceNum)
+		c.server.ErrorLog.Printf("receive a sgip bind response from %v[%s]\n",
+			c.Conn.RemoteAddr(), p.SequenceNumStr)
 
 	case *pkg.SgipSubmitReqPkt:
 		rsp = &Response{
@@ -141,8 +140,8 @@ func (c *conn) readPacket() (*Response, error) {
 			},
 			SequenceNum: p.SequenceNum,
 		}
-		c.server.ErrorLog.Printf("receive a sgip submit request from %v[%d]\n",
-			c.Conn.RemoteAddr(), p.SequenceNum)
+		c.server.ErrorLog.Printf("receive a sgip submit request from %v[%s]\n",
+			c.Conn.RemoteAddr(), p.SequenceNumStr)
 
 	case *pkg.SgipSubmitRespPkt:
 		rsp = &Response{
@@ -151,8 +150,8 @@ func (c *conn) readPacket() (*Response, error) {
 				Conn:   c.Conn,
 			},
 		}
-		c.server.ErrorLog.Printf("receive a sgip submit response from %v[%d]\n",
-			c.Conn.RemoteAddr(), p.SequenceNum)
+		c.server.ErrorLog.Printf("receive a sgip submit response from %v[%s]\n",
+			c.Conn.RemoteAddr(), p.SequenceNumStr)
 
 	case *pkg.SgipDeliverReqPkt:
 		rsp = &Response{
@@ -165,8 +164,8 @@ func (c *conn) readPacket() (*Response, error) {
 			},
 			SequenceNum: p.SequenceNum,
 		}
-		c.server.ErrorLog.Printf("receive a sgip deliver request from %v[%d]\n",
-			c.Conn.RemoteAddr(), p.SequenceNum)
+		c.server.ErrorLog.Printf("receive a sgip deliver request from %v[%s]\n",
+			c.Conn.RemoteAddr(), p.SequenceNumStr)
 
 	case *pkg.SgipDeliverRespPkt:
 		rsp = &Response{
@@ -175,8 +174,32 @@ func (c *conn) readPacket() (*Response, error) {
 				Conn:   c.Conn,
 			},
 		}
-		c.server.ErrorLog.Printf("receive a sgip deliver response from %v[%d]\n",
-			c.Conn.RemoteAddr(), p.SequenceNum)
+		c.server.ErrorLog.Printf("receive a sgip deliver response from %v[%s]\n",
+			c.Conn.RemoteAddr(), p.SequenceNumStr)
+
+	case *pkg.SgipReportReqPkt:
+		rsp = &Response{
+			Packet: &Packet{
+				Packer: p,
+				Conn:   c.Conn,
+			},
+			Packer: &pkg.SgipReportRespPkt{
+				SgipRespPkt: pkg.SgipRespPkt{SequenceNum: p.SequenceNum},
+			},
+			SequenceNum: p.SequenceNum,
+		}
+		c.server.ErrorLog.Printf("receive a sgip report request from %v[%s]\n",
+			c.Conn.RemoteAddr(), p.SequenceNumStr)
+
+	case *pkg.SgipReportRespPkt:
+		rsp = &Response{
+			Packet: &Packet{
+				Packer: p,
+				Conn:   c.Conn,
+			},
+		}
+		c.server.ErrorLog.Printf("receive a sgip report response from %v[%s]\n",
+			c.Conn.RemoteAddr(), p.SequenceNumStr)
 
 	case *pkg.SgipUnbindReqPkt:
 		rsp = &Response{
@@ -189,8 +212,8 @@ func (c *conn) readPacket() (*Response, error) {
 			},
 			SequenceNum: p.SequenceNum,
 		}
-		c.server.ErrorLog.Printf("receive a sgip exit request from %v[%d]\n",
-			c.Conn.RemoteAddr(), p.SequenceNum)
+		c.server.ErrorLog.Printf("receive a sgip exit request from %v[%s]\n",
+			c.Conn.RemoteAddr(), p.SequenceNumStr)
 
 	case *pkg.SgipUnbindRespPkt:
 		rsp = &Response{
@@ -199,8 +222,56 @@ func (c *conn) readPacket() (*Response, error) {
 				Conn:   c.Conn,
 			},
 		}
-		c.server.ErrorLog.Printf("receive a sgip exit response from %v[%d]\n",
-			c.Conn.RemoteAddr(), p.SequenceNum)
+		c.server.ErrorLog.Printf("receive a sgip exit response from %v[%s]\n",
+			c.Conn.RemoteAddr(), p.SequenceNumStr)
+
+	case *pkg.SgipUserRptReqPkt:
+		rsp = &Response{
+			Packet: &Packet{
+				Packer: p,
+				Conn:   c.Conn,
+			},
+			Packer: &pkg.SgipUserRptRespPkt{
+				SgipRespPkt: pkg.SgipRespPkt{SequenceNum: p.SequenceNum},
+			},
+			SequenceNum: p.SequenceNum,
+		}
+		c.server.ErrorLog.Printf("receive a sgip userRpt request from %v[%s]\n",
+			c.Conn.RemoteAddr(), p.SequenceNumStr)
+
+	case *pkg.SgipUserRptRespPkt:
+		rsp = &Response{
+			Packet: &Packet{
+				Packer: p,
+				Conn:   c.Conn,
+			},
+		}
+		c.server.ErrorLog.Printf("receive a sgip userRpt response from %v[%s]\n",
+			c.Conn.RemoteAddr(), p.SequenceNumStr)
+
+	case *pkg.SgipTraceReqPkt:
+		rsp = &Response{
+			Packet: &Packet{
+				Packer: p,
+				Conn:   c.Conn,
+			},
+			Packer: &pkg.SgipTraceRespPkt{
+				SequenceNum: p.SequenceNum,
+			},
+			SequenceNum: p.SequenceNum,
+		}
+		c.server.ErrorLog.Printf("receive a sgip trace request from %v[%s]\n",
+			c.Conn.RemoteAddr(), p.SequenceNumStr)
+
+	case *pkg.SgipTraceRespPkt:
+		rsp = &Response{
+			Packet: &Packet{
+				Packer: p,
+				Conn:   c.Conn,
+			},
+		}
+		c.server.ErrorLog.Printf("receive a sgip trace response from %v[%s]\n",
+			c.Conn.RemoteAddr(), p.SequenceNumStr)
 	default:
 		return nil, pkg.NewOpError(ErrUnsupportedPkt,
 			fmt.Sprintf("readPacket: receive unsupported packet type: %#v", p))
@@ -297,8 +368,6 @@ func (srv *Server) newConn(rwc net.Conn) (c *conn, err error) {
 	c.server = srv
 	c.Conn = pkg.NewConnection(rwc)
 	c.Conn.SetState(pkg.CONNECTION_CONNECTED)
-	c.n = c.server.N
-	c.t = c.server.T
 	return c, nil
 }
 
@@ -336,8 +405,7 @@ func ListenAndServe(addr string, nodeId uint32, t time.Duration, n int32, logWri
 	if logWriter == nil {
 		logWriter = os.Stderr
 	}
-	server := &Server{Addr: addr, Handler: handler, NodeId: nodeId,
-		T: t, N: n,
+	server := &Server{Addr: addr, Handler: handler, NodeId: nodeId, T: t, N: n,
 		ErrorLog: log.New(logWriter, "sgip server: ", log.LstdFlags)}
 	return server.listenAndServe()
 }

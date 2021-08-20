@@ -48,31 +48,42 @@ func handleSubmit(r *server.Response, p *server.Packet, l *log.Logger) (bool, er
 		return true, nil
 	}
 
+	//log.Printf("server sgip: receive a sgip submit request ok: %v.", req)
+
 	resp := r.Packer.(*pkg.SgipSubmitRespPkt)
 	resp.SequenceNum = pkg.GenSequenceNum(nodeId, <-p.Conn.SequenceID)
-	deliverPkgs := make([]*pkg.SgipDeliverReqPkt, 0)
+	deliverPkgs := make([]*pkg.SgipReportReqPkt, 0)
+	userRptPkgs := make([]*pkg.SgipUserRptReqPkt, 0)
 	for i, d := range req.UserNumber {
 		l.Printf("handleSubmit: handle submit from %s ok! msgid[%s], destTerminalId[%s]\n",
-			req.SPNumber, fmt.Sprintf("[%d]_%d", resp.SequenceNum, i), d)
-		content := "DELIVRD"
+			req.SPNumber, fmt.Sprintf("[%s]_%d", req.SequenceNumStr, i), d)
+
 		seqNum := pkg.GenSequenceNum(nodeId, <-p.Conn.SequenceID)
-		deliverPkgs = append(deliverPkgs, &pkg.SgipDeliverReqPkt{
-			UserNumber:     d,
-			SPNumber:       req.SPNumber,
-			TP_pid:         0,
-			TP_udhi:        0,
-			MessageCoding:  0,
-			MessageLength:  uint32(len(content)),
-			MessageContent: content,
-			Reserve:        "",
-			SequenceNum:    seqNum,
+		userRptSeqNum := pkg.GenSequenceNum(nodeId, <-p.Conn.SequenceID)
+
+		deliverPkgs = append(deliverPkgs, &pkg.SgipReportReqPkt{
+			SubmitSequenceNum: req.SequenceNum,
+			ReportType:        1,
+			UserNumber:        d,
+			State:             0,
+			ErrorCode:         0,
+			Reserve:           "",
+			SequenceNum:       seqNum,
+		})
+		userRptPkgs = append(userRptPkgs, &pkg.SgipUserRptReqPkt{
+			SPNumber:      req.SPNumber,
+			UserNumber:    d,
+			UserCondition: 0,
+			Reserve:       "",
+			SequenceNum:   userRptSeqNum,
 		})
 	}
-	go mockDeliver(deliverPkgs, p)
+	go mockReport(deliverPkgs, p)
+	go mockUserRpt(userRptPkgs, p)
 	return false, nil
 }
 
-func mockDeliver(pkgs []*pkg.SgipDeliverReqPkt, s *server.Packet) {
+func mockReport(pkgs []*pkg.SgipReportReqPkt, s *server.Packet) {
 	t := time.NewTicker(5 * time.Second)
 	defer t.Stop()
 	for {
@@ -82,10 +93,34 @@ func mockDeliver(pkgs []*pkg.SgipDeliverReqPkt, s *server.Packet) {
 			for _, p := range pkgs {
 				err := s.SendPkt(p, p.SequenceNum)
 				if err != nil {
-					log.Printf("server sgip: send a sgip deliver request error: %s.", err)
+					log.Printf("server sgip: send a sgip report request error: %s.", err)
 					return
 				} else {
-					log.Printf("server sgip: send a sgip deliver request ok.")
+					log.Printf("server sgip: send a sgip report request ok.")
+				}
+			}
+			return
+
+		default:
+		}
+
+	}
+}
+
+func mockUserRpt(pkgs []*pkg.SgipUserRptReqPkt, s *server.Packet) {
+	t := time.NewTicker(5 * time.Second)
+	defer t.Stop()
+	for {
+		select {
+		case <-t.C:
+
+			for _, p := range pkgs {
+				err := s.SendPkt(p, p.SequenceNum)
+				if err != nil {
+					log.Printf("server sgip: send a sgip userRpt request error: %s.", err)
+					return
+				} else {
+					log.Printf("server sgip: send a sgip userRpt request ok")
 				}
 			}
 			return

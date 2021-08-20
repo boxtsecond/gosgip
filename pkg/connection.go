@@ -26,12 +26,33 @@ type Conn struct {
 	done       chan<- struct{}
 }
 
+func newRandomSequenceIDGenerator() (<-chan uint32, chan<- struct{}) {
+	out := make(chan uint32)
+	done := make(chan struct{})
+	rand.Seed(time.Now().UnixNano())
+
+	go func() {
+		var i = uint32(rand.Intn(100000))
+
+		for {
+			select {
+			case out <- i:
+				i++
+			case <-done:
+				close(out)
+				return
+			}
+		}
+	}()
+	return out, done
+}
+
 func newSequenceIDGenerator() (<-chan uint32, chan<- struct{}) {
 	out := make(chan uint32)
 	done := make(chan struct{})
 
 	go func() {
-		var i = rand.Uint32()
+		var i uint32
 		for {
 			select {
 			case out <- i:
@@ -46,7 +67,7 @@ func newSequenceIDGenerator() (<-chan uint32, chan<- struct{}) {
 }
 
 func NewConnection(conn net.Conn) *Conn {
-	sequenceID, done := newSequenceIDGenerator()
+	sequenceID, done := newRandomSequenceIDGenerator()
 	c := &Conn{
 		Conn:       conn,
 		SequenceID: sequenceID,
@@ -174,10 +195,22 @@ func (c *Conn) RecvAndUnpackPkt(timeout time.Duration) (Packer, error) {
 		p = &SgipDeliverReqPkt{SequenceNum: sequenceID}
 	case SGIP_DELIVER_RESP:
 		p = &SgipDeliverRespPkt{SgipRespPkt{SequenceNum: sequenceID}}
+	case SGIP_REPORT:
+		p = &SgipReportReqPkt{SequenceNum: sequenceID}
+	case SGIP_REPORT_RESP:
+		p = &SgipReportRespPkt{SgipRespPkt{SequenceNum: sequenceID}}
 	case SGIP_UNBIND:
 		p = &SgipUnbindReqPkt{SequenceNum: sequenceID}
 	case SGIP_UNBIND_RESP:
 		p = &SgipUnbindRespPkt{SequenceNum: sequenceID}
+	case SGIP_USERRPT:
+		p = &SgipUserRptReqPkt{SequenceNum: sequenceID}
+	case SGIP_USERRPT_RESP:
+		p = &SgipUserRptRespPkt{SgipRespPkt{SequenceNum: sequenceID}}
+	case SGIP_TRACE:
+		p = &SgipTraceReqPkt{SequenceNum: sequenceID}
+	case SGIP_TRACE_RESP:
+		p = &SgipTraceRespPkt{SequenceNum: sequenceID}
 
 	default:
 		return nil, ErrCommandIDNotSupported
