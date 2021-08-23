@@ -56,7 +56,7 @@ func (cli *Client) Connect(serverAddr, user, pwd string, loginType uint8, timeou
 		Reserve:       "",
 	}
 
-	err = cli.SendReqPkt(req)
+	_, err = cli.SendReqPkt(req)
 	if err != nil {
 		return err
 	}
@@ -86,9 +86,9 @@ func (cli *Client) Disconnect() {
 	}
 }
 
-func (cli *Client) SendReqPkt(packet pkg.Packer) error {
+func (cli *Client) SendReqPkt(packet pkg.Packer) ([3]uint32, error) {
 	seqNum := pkg.GenSequenceNum(cli.nodeId, <-cli.conn.SequenceID)
-	return cli.conn.SendPkt(packet, seqNum)
+	return seqNum, cli.conn.SendPkt(packet, seqNum)
 }
 
 func (cli *Client) SendRspPkt(packet pkg.Packer, seqNum [3]uint32) error {

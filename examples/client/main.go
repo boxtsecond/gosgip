@@ -80,7 +80,7 @@ func startAClient(idx int) {
 				Reserve:          "",
 			}
 
-			err = c.SendReqPkt(p)
+			_, err = c.SendReqPkt(p)
 			if err != nil {
 				log.Printf("client %d: send a sgip submit request error: %s.", idx, err)
 				return
@@ -95,7 +95,7 @@ func startAClient(idx int) {
 					UserNumber:        p.UserNumber[0],
 					Reserve:           "",
 				}
-				err := c.SendReqPkt(tracePkg)
+				_, err := c.SendReqPkt(tracePkg)
 				if err != nil {
 					log.Printf("client %d: send a sgip trace request error: %s.", idx, err)
 					return
