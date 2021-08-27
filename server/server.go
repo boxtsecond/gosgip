@@ -356,10 +356,10 @@ func (c *conn) serve() {
 		}
 
 		if err != nil {
-			atomic.AddInt32(&c.counter, 1)
+			//atomic.AddInt32(&c.counter, 1)
 			break
 		}
-		atomic.AddInt32(&c.counter, -1)
+		//atomic.AddInt32(&c.counter, -1)
 	}
 }
 
