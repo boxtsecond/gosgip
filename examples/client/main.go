@@ -17,8 +17,9 @@ var (
 	user      = flag.String("user", "10000001", "登陆账号")
 	pwd       = flag.String("pwd", "12345678", "登陆密码")
 	loginType = flag.String("loginType", "1", "登陆类型")
-	nodeId    = flag.String("nodeId", "123456", "企业代码")
+	nodeId    = flag.String("nodeId", "123456", "节点编号")
 	spCode    = flag.String("spCode", "12345", "SP的接入号码")
+	corpId    = flag.String("corpId", "12345", "企业代码")
 	phone     = flag.String("phone", "8618012345678", "接收手机号码, 86..., 多个使用,分割")
 	msg       = flag.String("msg", "验证码：1234", "短信内容")
 )
@@ -56,25 +57,25 @@ func startAClient(idx int) {
 			}
 			destStrArr := strings.Split(*phone, ",")
 			p := &pkg.SgipSubmitReqPkt{
-				SPNumber:         *nodeId,
+				SPNumber:         *spCode,
 				ChargeNumber:     "",
 				UserCount:        uint8(len(destStrArr)),
 				UserNumber:       destStrArr,
-				CorpId:           *spCode,
+				CorpId:           *corpId,
 				ServiceType:      "",
 				FeeType:          0,
 				FeeValue:         "",
 				GivenValue:       "",
 				AgentFlag:        0,
 				MorelatetoMTFlag: 0,
-				Priority:         0,
+				Priority:         pkg.DEFAULT_PRIORITY,
 				ExpireTime:       "",
 				ScheduleTime:     "",
-				ReportFlag:       0,
+				ReportFlag:       pkg.NEED_REPORT,
 				TP_pid:           0,
 				TP_udhi:          0,
 				MessageCoding:    pkg.GB18030,
-				MessageType:      0,
+				MessageType:      pkg.MSG,
 				MessageLength:    uint32(len(cont)),
 				MessageContent:   cont,
 				Reserve:          "",

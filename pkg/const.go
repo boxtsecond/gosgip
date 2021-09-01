@@ -7,8 +7,7 @@ const (
 
 // MsgType
 const (
-	MO = 0 // MO消息（终端发给SP）
-	MT = 6 // MT消息（SP发给终端，包括WEB上发送的点对点短消息）
+	MSG = 0 // 短信息信息
 )
 
 // MsgFormat
@@ -22,20 +21,25 @@ const (
 )
 
 const (
-	NOT_REPORT = 0 // 不是状态报告
-	IS_REPORT  = 1 // 是状态报告
+	SUBMIT_REPORT  = 0 // 不是状态报告
+	DELIVER_REPORT = 1 // 是状态报告
 )
 
 // 是否要求返回状态报告
 const (
-	NO_NEED_REPORT = 0
-	NEED_REPORT    = 1
+	FAILED_REPORT  = 0 // 只有最后出错时要返回状态报告
+	NEED_REPORT    = 1 // 无论最后是否成功都要返回状态报告
+	NO_NEED_REPORT = 2
 )
 
 // 短消息发送优先级
 const (
-	LOW_PRIORITY = iota
-	NORMAL_PRIORITY
-	HIGHER_PRIORITY
-	HIGHEST_PRIORITY
+	DEFAULT_PRIORITY = 0
+)
+
+// Report 所涉及的短消息的当前执行状态
+const (
+	SUCCESS = 0 // 发送成功
+	WAITING = 1 // 等待发送
+	FAILED  = 2 // 发送失败
 )
